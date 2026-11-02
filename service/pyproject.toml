@@ -6,6 +6,8 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn>=0.30",
+    # uvicorn 本身不带 WebSocket 实现，缺了它 /ws 直接 404（HUD 一直显示离线的根因）
+    "websockets>=13",
     "psutil>=6",
     "nvidia-ml-py>=12",
 ]

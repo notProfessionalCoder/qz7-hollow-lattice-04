@@ -1,15 +1,32 @@
 """入口：python -m jarvis_service，或打包后的 jarvis-service.exe（由 Tauri 作为 sidecar 拉起）。"""
 
 import logging
+import os
 import platform
 import sys
+import threading
+import time
 
+import psutil
 import uvicorn
 
 from . import __version__
 from .app import create_app
 from .config import load_settings
 from .logs import setup_logging
+
+
+def watch_parent(pid: int, interval: float = 2.0) -> None:
+    """外壳进程退出后自行退出（外壳被强杀时不会通知我们）。"""
+    log = logging.getLogger("jarvis")
+
+    def run() -> None:
+        while psutil.pid_exists(pid):
+            time.sleep(interval)
+        log.info("parent process %s is gone, exiting", pid)
+        os._exit(0)
+
+    threading.Thread(target=run, name="parent-watch", daemon=True).start()
 
 
 def main() -> None:
@@ -26,6 +43,9 @@ def main() -> None:
         getattr(sys, "frozen", False),
         log_file,
     )
+    parent = os.environ.get("JARVIS_PARENT_PID")
+    if parent and parent.isdigit():
+        watch_parent(int(parent))
     try:
         # log_config=None：不让 uvicorn 覆盖上面的日志配置，它的日志统一进 service.log
         uvicorn.run(create_app(), host=settings.host, port=settings.port, log_config=None)

@@ -24,7 +24,7 @@ python -m jarvis_service
 ```powershell
 # 2. HUD 外壳。tauri.windows.conf.json 要求 sidecar 文件存在，先打一次包：
 cd service
-pyinstaller --onefile --name jarvis-service --collect-submodules jarvis_service --collect-submodules uvicorn pyinstaller_entry.py
+pyinstaller --onefile --name jarvis-service --collect-submodules jarvis_service --collect-submodules uvicorn --collect-submodules websockets pyinstaller_entry.py
 copy dist\jarvis-service.exe ..\app\src-tauri\binaries\jarvis-service-x86_64-pc-windows-msvc.exe
 
 cd ..\app
