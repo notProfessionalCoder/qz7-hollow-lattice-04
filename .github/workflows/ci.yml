@@ -138,6 +138,8 @@ jobs:
           Start-Sleep 6
           $orphan = Get-Process jarvis-service -ErrorAction SilentlyContinue
           if ($orphan) { "orphan service still running"; $orphan | Format-Table Id, Path | Out-String -Width 300 }
+          "===== service.log after shell was killed"
+          Get-Content "$logs\service.log" -Tail 8 -ErrorAction SilentlyContinue
           if (-not $health) { throw "installed app did not start the service" }
           if (-not $hud) { throw "service is up but the HUD never opened the WebSocket" }
           if ($orphan) { throw "service outlived the shell" }
