@@ -81,7 +81,12 @@ fn spawn_once(app: &AppHandle) -> Result<Option<i32>, String> {
     let cmd = app
         .shell()
         .sidecar("jarvis-service")
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())?
+        // PyInstaller 单文件 exe 会再起一个子进程；用作业对象才能整棵树一起关掉
+        .set_process_group(true)
+        .kill_on_drop(true)
+        // 服务发现外壳进程没了会自行退出，避免外壳崩溃后留下孤儿进程占着端口
+        .env("JARVIS_PARENT_PID", std::process::id().to_string());
     let (mut rx, child) = cmd.spawn().map_err(|e| e.to_string())?;
     logfile::append(
         "shell",
