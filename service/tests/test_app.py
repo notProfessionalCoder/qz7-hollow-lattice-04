@@ -65,3 +65,17 @@ def test_websocket_streams_snapshots():
         msg = ws.receive_json()
         assert msg["plugin"] == "heartbeat"
         assert msg["data"]["status"] == "online"
+
+
+def test_wait_for_exit_returns_when_process_ends():
+    import subprocess
+    import sys
+    import threading
+
+    from jarvis_service.__main__ import wait_for_exit
+
+    proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(0.5)"])
+    done = threading.Event()
+    threading.Thread(target=lambda: (wait_for_exit(proc.pid, 0.1), done.set()), daemon=True).start()
+    proc.wait()
+    assert done.wait(5), "wait_for_exit did not return after the process exited"

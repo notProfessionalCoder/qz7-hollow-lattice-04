@@ -16,13 +16,36 @@ from .config import load_settings
 from .logs import setup_logging
 
 
-def watch_parent(pid: int, interval: float = 2.0) -> None:
+def wait_for_exit(pid: int, interval: float = 2.0) -> None:
+    """阻塞到进程 pid 退出。
+
+    Windows 上用 WaitForSingleObject：轮询 pid 不可靠，别的进程还握着句柄时，
+    已退出的进程仍会被当成"存在"。
+    """
+    if sys.platform == "win32":
+        import ctypes
+
+        synchronize = 0x00100000
+        infinite = 0xFFFFFFFF
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(synchronize, False, pid)
+        if not handle:
+            return  # 已经不在了
+        try:
+            kernel32.WaitForSingleObject(handle, infinite)
+        finally:
+            kernel32.CloseHandle(handle)
+    else:
+        while psutil.pid_exists(pid):
+            time.sleep(interval)
+
+
+def watch_parent(pid: int) -> None:
     """外壳进程退出后自行退出（外壳被强杀时不会通知我们）。"""
     log = logging.getLogger("jarvis")
 
     def run() -> None:
-        while psutil.pid_exists(pid):
-            time.sleep(interval)
+        wait_for_exit(pid)
         log.info("parent process %s is gone, exiting", pid)
         os._exit(0)
 
