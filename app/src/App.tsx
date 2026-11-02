@@ -1,24 +1,18 @@
 import { useEffect, useState } from "react";
-import { type Layer, nextLayer, setLayer } from "./layer";
-import { useService } from "./service";
+import { Clock } from "./components/Clock";
+import { Panel } from "./components/Panel";
+import { ParticleField } from "./components/ParticleField";
+import { Reactor } from "./components/Reactor";
+import { AlertsPanel, CpuMemoryPanel, DiskPanel, GpuPanel, NetworkPanel } from "./components/SystemPanels";
+import { type Layer, nextLayer, setLayer } from "./lib/layer";
+import { useService } from "./lib/service";
+import type { HeartbeatSnapshot, SystemSnapshot } from "./lib/types";
 
 const LINK_TEXT = { connecting: "连接中", online: "在线", offline: "离线" } as const;
 const LAYER_TEXT: Record<Layer, string> = { bottom: "桌面层", top: "置顶", normal: "普通" };
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="panel">
-      <header className="panel-title">{title}</header>
-      <div className="panel-body">{children}</div>
-    </section>
-  );
-}
-
-export default function App() {
-  const { snapshots, link } = useService();
-  const heartbeat = snapshots.heartbeat as { uptime?: number } | undefined;
+function useLayerHotkey(): Layer {
   const [layer, setLayerState] = useState<Layer>("bottom");
-
   // F9 切换窗口层级：桌面层 → 置顶 → 普通
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -32,35 +26,70 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+  return layer;
+}
+
+export default function App() {
+  const { snapshots, link } = useService();
+  const layer = useLayerHotkey();
+  const heartbeat = snapshots.heartbeat as unknown as HeartbeatSnapshot | undefined;
+  const sys = snapshots.system as unknown as SystemSnapshot | undefined;
 
   return (
-    <main className="hud">
-      <div className="column">
-        <Panel title="通讯">
-          <p className="muted">Gmail / Outlook 汇总（Phase 1）</p>
-        </Panel>
-      </div>
+    <div className="hud-root">
+      <ParticleField />
+      <div className="scanlines" aria-hidden />
 
-      <div className="column center">
-        <div className="reactor" aria-hidden>
-          <div className="ring r1" />
-          <div className="ring r2" />
-          <div className="ring r3" />
-          <div className="core" />
+      <header className="topbar">
+        <Clock />
+        <div className="topbar-mid">
+          <span className="wordmark-small">J.A.R.V.I.S.</span>
         </div>
-        <h1 className="wordmark">J.A.R.V.I.S.</h1>
-        <p className={`link link-${link}`}>
-          核心服务 · {LINK_TEXT[link]}
-          {heartbeat?.uptime !== undefined && ` · 运行 ${Math.floor(heartbeat.uptime)}s`}
-        </p>
-        <p className="muted hint">F9 切换窗口层级 · 当前：{LAYER_TEXT[layer]}</p>
-      </div>
+        <div className="topbar-right">
+          <span className={`link link-${link}`}>
+            <i className="dot" /> 核心服务 {LINK_TEXT[link]}
+            {heartbeat && ` · ${Math.floor(heartbeat.uptime)}s`}
+          </span>
+          <span className="muted small">F9 层级：{LAYER_TEXT[layer]}</span>
+        </div>
+      </header>
 
-      <div className="column">
-        <Panel title="系统诊断">
-          <p className="muted">CPU / GPU / 网络（Phase 1）</p>
-        </Panel>
-      </div>
-    </main>
+      <main className="hud">
+        <div className="col col-comms">
+          <Panel title="通讯" tag="Gmail · Outlook">
+            <p className="muted">邮箱未连接。按 docs/credentials.md 配好凭据后，这里显示合并收件箱和 AI 摘要。</p>
+          </Panel>
+          <Panel title="今日要点" tag="AI">
+            <p className="muted">连接邮箱后生成</p>
+          </Panel>
+        </div>
+
+        <div className="col col-agenda">
+          <Panel title="日程">
+            <p className="muted">Phase 3</p>
+          </Panel>
+          <Panel title="待办">
+            <p className="muted">Phase 3</p>
+          </Panel>
+        </div>
+
+        <div className="col col-center">
+          <Reactor active={link === "online"} />
+          <h1 className="wordmark">J.A.R.V.I.S.</h1>
+          <p className="muted">语音唤醒（Phase 2）</p>
+        </div>
+
+        <div className="col col-system">
+          <CpuMemoryPanel sys={sys} />
+          <GpuPanel sys={sys} />
+        </div>
+
+        <div className="col col-net">
+          <NetworkPanel sys={sys} />
+          <DiskPanel sys={sys} />
+          <AlertsPanel sys={sys} />
+        </div>
+      </main>
+    </div>
   );
 }

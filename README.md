@@ -42,4 +42,6 @@ HUD 里按 F9 切换窗口层级：桌面层 → 置顶 → 普通。
 
 ## 凭据
 
+邮箱的配置步骤见 [docs/credentials.md](docs/credentials.md)。
+
 OAuth token、API key 只放本机（Windows 凭据管理器）或 GitHub Secrets，不要写进仓库。
