@@ -1,0 +1,19 @@
+# Node
+node_modules/
+app/dist/
+
+# Python
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+service/build/
+service/dist/
+*.spec
+
+# 本地配置和凭据，永远不进仓库
+.env
+.env.*
+*.token
+credentials*.json

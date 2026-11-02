@@ -35,12 +35,12 @@ CI：GitHub Actions 打 Windows 安装包（MSI / NSIS）
 
 先让「能跑起来、能出包」这件事成立。
 
-- [ ] 仓库结构：`app/`（Tauri + React）、`service/`（Python）、`docs/`
-- [ ] Tauri 空壳：全屏、无边框、透明背景、置底/置顶切换
-- [ ] Python 服务骨架：FastAPI + WebSocket，只监听 127.0.0.1
-- [ ] 插件接口定义 + 插件加载器
-- [ ] 外壳启动时拉起 Python 服务（sidecar），退出时一起关
-- [ ] GitHub Actions：lint + 测试 + Windows 安装包产物
+- [x] 仓库结构：`app/`（Tauri + React）、`service/`（Python）
+- [x] Tauri 空壳：全屏、无边框、透明背景、置底/置顶切换
+- [x] Python 服务骨架：FastAPI + WebSocket，只监听 127.0.0.1
+- [x] 插件接口定义 + 插件加载器
+- [x] 外壳启动时拉起 Python 服务（sidecar），退出时一起关
+- [x] GitHub Actions：lint + 测试 + Windows 安装包产物
 - [ ] 配置与凭据方案：本地配置文件 + Windows Credential Manager
 
 难点：Python sidecar 的打包（PyInstaller 或嵌入式 Python），以及透明窗口在超宽屏上的性能。

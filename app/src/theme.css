@@ -1,0 +1,175 @@
+/* 全息 HUD 主题：冰蓝 + 白光，深色透明底。颜色都走变量，后续统一调。 */
+:root {
+  --holo: #8fd3ff;
+  --holo-strong: #d6f1ff;
+  --holo-dim: rgba(143, 211, 255, 0.35);
+  --holo-faint: rgba(143, 211, 255, 0.08);
+  --bg: rgba(4, 10, 18, 0.72);
+  --ok: #9fffd0;
+  --warn: #ffd27a;
+  --bad: #ff8a8a;
+  --glow: 0 0 6px var(--holo-dim), 0 0 18px var(--holo-faint);
+  --font: "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif;
+  --spin: 18s;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  color: var(--holo-strong);
+  font-family: var(--font);
+  overflow: hidden;
+}
+
+.hud {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(480px, 1.4fr) minmax(320px, 1fr);
+  gap: 24px;
+  padding: 24px;
+  background:
+    repeating-linear-gradient(0deg, var(--holo-faint) 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse at center, rgba(20, 50, 80, 0.45), var(--bg) 70%);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.center {
+  align-items: center;
+  justify-content: center;
+}
+
+.panel {
+  border: 1px solid var(--holo-dim);
+  box-shadow: var(--glow), inset 0 0 24px var(--holo-faint);
+  background: rgba(8, 20, 34, 0.55);
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  animation: panel-in 600ms ease-out both;
+}
+
+.panel-title {
+  padding: 8px 14px;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  color: var(--holo);
+  border-bottom: 1px solid var(--holo-dim);
+  text-shadow: var(--glow);
+}
+
+.panel-body {
+  padding: 14px;
+}
+
+.muted {
+  margin: 0;
+  color: var(--holo-dim);
+}
+
+.reactor {
+  position: relative;
+  width: 260px;
+  height: 260px;
+}
+
+.ring,
+.core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.ring {
+  border: 2px solid var(--holo-dim);
+  box-shadow: var(--glow);
+}
+
+.r1 {
+  border-style: dashed;
+  animation: spin var(--spin) linear infinite;
+}
+
+.r2 {
+  inset: 30px;
+  border-top-color: var(--holo);
+  animation: spin calc(var(--spin) / 3) linear infinite reverse;
+}
+
+.r3 {
+  inset: 70px;
+  border-left-color: var(--holo-strong);
+  animation: spin calc(var(--spin) / 6) linear infinite;
+}
+
+.core {
+  inset: 105px;
+  background: radial-gradient(circle, var(--holo-strong), var(--holo) 45%, transparent 75%);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.wordmark {
+  margin: 28px 0 6px;
+  font-weight: 300;
+  letter-spacing: 0.6em;
+  text-shadow: var(--glow);
+}
+
+.link {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+}
+
+.link-online {
+  color: var(--ok);
+}
+
+.link-connecting {
+  color: var(--warn);
+}
+
+.link-offline {
+  color: var(--bad);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.6;
+    transform: scale(0.92);
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+  }
+}
+
+.hint {
+  margin-top: 6px;
+  font-size: 12px;
+}
