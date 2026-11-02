@@ -8,7 +8,7 @@ interface Props {
 }
 
 /** 环形仪表：0–100。 */
-export function Gauge({ value, label, sub, size = 132 }: Props) {
+export function Gauge({ value, label, sub, size = 168 }: Props) {
   const r = 52;
   const c = 2 * Math.PI * r;
   const v = Math.max(0, Math.min(100, value ?? 0));

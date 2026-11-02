@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
@@ -27,14 +27,26 @@ const SYSTEM = {
   alerts: [{ level: "warn", source: "disk", message: "D:\\ 剩余空间不足" }],
 };
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("App", () => {
+  it("shows an offline banner when the service drops", () => {
+    vi.stubGlobal("WebSocket", FakeSocket);
+    render(<App />);
+    act(() => FakeSocket.last!.onclose?.());
+    expect(screen.getByText(/核心服务未连接/)).toBeTruthy();
+  });
+
   it("renders the HUD shell before data arrives", () => {
     vi.stubGlobal("WebSocket", FakeSocket);
     render(<App />);
     expect(screen.getAllByText("J.A.R.V.I.S.").length).toBeGreaterThan(0);
-    expect(screen.getByText("未检测到 NVIDIA GPU")).toBeTruthy();
+    // 没数据时用示例数据填充并标注
+    expect(screen.getAllByText("示例").length).toBeGreaterThan(3);
+    expect(screen.getByText("NVIDIA GeForce RTX 5080")).toBeTruthy();
   });
 
   it("shows system snapshot from the service", () => {
@@ -48,5 +60,7 @@ describe("App", () => {
     expect(screen.getByText("4.0 KB/s")).toBeTruthy();
     expect(screen.getByText("D:\\ 剩余空间不足")).toBeTruthy();
     expect(screen.getByText(/核心服务 在线/)).toBeTruthy();
+    // 系统面板换成真实数据后不再标示例（邮件/日程/待办仍是示例）
+    expect(screen.getAllByText("示例").length).toBe(4);
   });
 });

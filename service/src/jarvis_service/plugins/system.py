@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -13,6 +14,8 @@ from typing import Any
 import psutil
 
 from ..plugin import Plugin
+
+log = logging.getLogger(__name__)
 
 # 告警阈值（百分比 / 摄氏度）
 THRESHOLDS = {
@@ -67,6 +70,10 @@ def build_alerts(snap: dict[str, Any]) -> list[dict[str, str]]:
     return out
 
 
+def _s(v: Any) -> str:
+    return v.decode() if isinstance(v, bytes) else str(v)
+
+
 class _Nvml:
     """NVML 的薄封装；初始化失败（没 N 卡 / 没驱动）就永久禁用。"""
 
@@ -78,8 +85,14 @@ class _Nvml:
             pynvml.nvmlInit()
             self._nv = pynvml
             self.ok = True
-        except Exception:
+            log.info(
+                "NVML ok, driver %s, %d GPU(s)",
+                _s(pynvml.nvmlSystemGetDriverVersion()),
+                pynvml.nvmlDeviceGetCount(),
+            )
+        except Exception as exc:
             self.ok = False
+            log.warning("NVML unavailable, GPU panel disabled: %r", exc)
 
     def read(self) -> list[dict[str, Any]]:
         if not self.ok:
@@ -93,7 +106,7 @@ class _Nvml:
                 util = nv.nvmlDeviceGetUtilizationRates(h)
                 mem = nv.nvmlDeviceGetMemoryInfo(h)
                 gpu: dict[str, Any] = {
-                    "name": name.decode() if isinstance(name, bytes) else name,
+                    "name": _s(name),
                     "util": float(util.gpu),
                     "mem_used": int(mem.used),
                     "mem_total": int(mem.total),
@@ -110,7 +123,8 @@ class _Nvml:
                 except Exception:
                     pass
                 gpus.append(gpu)
-        except Exception:
+        except Exception as exc:
+            log.warning("NVML read failed: %r", exc)
             return []
         return gpus
 

@@ -38,10 +38,10 @@ export function ParticleField() {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     const mat = new THREE.PointsMaterial({
-      color: 0x8fd3ff,
+      color: 0x3fd0ff,
       size: 2,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.55,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });

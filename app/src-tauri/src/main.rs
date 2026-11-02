@@ -1,6 +1,8 @@
 // 发布版不弹控制台窗口
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod desktop_icons;
+mod logfile;
 mod sidecar;
 
 use tauri::{Manager, RunEvent, WebviewWindow};
@@ -20,6 +22,12 @@ fn set_layer(window: WebviewWindow, mode: String) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+/// 日志目录，HUD 在服务离线时显示给用户。
+#[tauri::command]
+fn logs_dir() -> String {
+    logfile::logs_dir().display().to_string()
+}
+
 fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -28,13 +36,19 @@ fn main() {
             sidecar::start(app.handle());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![set_layer])
+        .invoke_handler(tauri::generate_handler![
+            set_layer,
+            desktop_icons::toggle_desktop_icons,
+            desktop_icons::desktop_icons_visible,
+            logs_dir
+        ])
         .build(tauri::generate_context!())
         .expect("failed to build tauri app");
 
     app.run(|handle, event| {
         if let RunEvent::Exit = event {
             handle.state::<sidecar::ServiceProcess>().stop();
+            desktop_icons::restore_on_exit();
         }
     });
 }
