@@ -96,6 +96,39 @@ jobs:
         working-directory: app
         run: npx tauri build
 
+      - name: 冒烟测试：直接跑打包后的服务
+        shell: pwsh
+        run: |
+          $p = Start-Process service/dist/jarvis-service.exe -PassThru -RedirectStandardError svc-err.txt -RedirectStandardOutput svc-out.txt
+          $ok = $false
+          for ($i = 0; $i -lt 40; $i++) {
+            Start-Sleep 1
+            try { Invoke-RestMethod http://127.0.0.1:8765/health | ConvertTo-Json; $ok = $true; break } catch {}
+          }
+          if ($ok) { Invoke-RestMethod http://127.0.0.1:8765/plugins/system | ConvertTo-Json -Depth 4 }
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          Get-Content svc-out.txt, svc-err.txt -ErrorAction SilentlyContinue
+          if (-not $ok) { throw "frozen service did not answer /health" }
+
+      - name: 冒烟测试：安装后启动，确认自动拉起服务
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem app/src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
+          Start-Process $installer.FullName -ArgumentList '/S' -Wait
+          $dir = Get-ChildItem "$env:LOCALAPPDATA" -Directory | Where-Object Name -like 'Jarvis*' | Select-Object -First 1
+          Get-ChildItem $dir.FullName -Recurse | Select-Object FullName, Length | Format-Table -AutoSize | Out-String -Width 300
+          $app = Get-ChildItem $dir.FullName -Filter *.exe | Where-Object { $_.Name -notmatch 'uninstall|jarvis-service' } | Select-Object -First 1
+          $p = Start-Process $app.FullName -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 60; $i++) {
+            Start-Sleep 1
+            try { Invoke-RestMethod http://127.0.0.1:8765/health | ConvertTo-Json; $ok = $true; break } catch {}
+          }
+          Get-Process | Where-Object { $_.ProcessName -match 'jarvis' } | Format-Table Id, ProcessName, Path -AutoSize | Out-String -Width 300
+          Get-ChildItem "$env:APPDATA\jarvis\logs" -ErrorAction SilentlyContinue | ForEach-Object { "== $($_.Name)"; Get-Content $_.FullName -Tail 80 }
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          if (-not $ok) { throw "installed app did not start the service" }
+
       - uses: actions/upload-artifact@v4
         with:
           name: jarvis-desktop-windows
